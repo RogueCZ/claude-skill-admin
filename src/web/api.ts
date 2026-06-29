@@ -21,9 +21,9 @@ export const getFile = async (path: string) => {
 export const putFile = (path: string, content: string) =>
   fetch(`/api/file?path=${encodeURIComponent(path)}`, { method: "PUT", body: content }).then(j<{ ok: true }>);
 export const createItem = (type: string, rootLabel: string, name: string) =>
-  fetch("/api/items", { method: "POST", body: JSON.stringify({ type, rootLabel, name }) }).then(j<{ id: string; path: string }>);
+  fetch("/api/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, rootLabel, name }) }).then(j<{ id: string; path: string }>);
 export const addFile = (id: string, relName: string, content: string) =>
-  fetch(`/api/items/${id}/files`, { method: "POST", body: JSON.stringify({ relName, content }) }).then(j<{ path: string }>);
+  fetch(`/api/items/${id}/files`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ relName, content }) }).then(j<{ path: string }>);
 export const deleteFile = (path: string) =>
   fetch(`/api/file?path=${encodeURIComponent(path)}`, { method: "DELETE" }).then(j<{ ok: true }>);
 export const deleteItem = (id: string) =>

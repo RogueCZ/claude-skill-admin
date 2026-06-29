@@ -29,16 +29,25 @@ export function App() {
   async function openItem(item: Item) {
     setSelected(item);
     setError(null);
-    const tree = await api.getFiles(item.id);
-    setFiles(tree);
-    const first = item.type === "command" ? tree[0]?.path : findSkillMd(tree);
-    if (first) await openFile(first);
+    try {
+      const tree = await api.getFiles(item.id);
+      setFiles(tree);
+      setFilePath(null); setContent(""); setDirty(false);
+      const first = item.type === "command" ? tree[0]?.path : findSkillMd(tree);
+      if (first) await openFile(first);
+    } catch (e) { setError(String(e)); }
   }
 
   async function openFile(path: string) {
-    setFilePath(path);
-    setContent(await api.getFile(path));
-    setDirty(false);
+    try {
+      const text = await api.getFile(path);
+      setFilePath(path);
+      setContent(text);
+      setDirty(false);
+    } catch (e) {
+      setError(String(e));
+      setDirty(false);
+    }
   }
 
   async function save() {
