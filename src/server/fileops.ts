@@ -1,6 +1,6 @@
 import {
   existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync,
-  renameSync, statSync, copyFileSync, rmSync,
+  renameSync, copyFileSync, rmSync,
 } from "node:fs";
 import { join, relative, dirname, basename, sep } from "node:path";
 import type { Root, ItemType } from "./config.js";
@@ -24,12 +24,21 @@ function timestamp(): string {
 }
 
 function rootForPath(roots: Root[], real: string): Root {
-  for (const r of roots) {
-    const rel = relative(resolveInRoot(roots, r.path), real);
+  // Sort by descending resolved-path length so the most-specific (longest) root matches first,
+  // preventing a parent root from stealing paths that belong to a nested child root.
+  const sorted = [...roots].sort(
+    (a, b) => resolveInRoot(roots, b.path).length - resolveInRoot(roots, a.path).length,
+  );
+  for (const r of sorted) {
+    const resolvedRoot = resolveInRoot(roots, r.path);
+    const rel = relative(resolvedRoot, real);
     if (rel === "" || (!rel.startsWith("..") && rel !== real)) return r;
   }
-  // Fall back: pick the root whose path is a prefix.
-  const r = roots.find((x) => real.startsWith(resolveInRoot(roots, x.path)));
+  // Fall back: segment-boundary prefix check (avoids /tmp/work matching /tmp/work-extra/...).
+  const r = sorted.find((x) => {
+    const resolvedRoot = resolveInRoot(roots, x.path);
+    return real === resolvedRoot || real.startsWith(resolvedRoot + sep);
+  });
   if (!r) throw new FileOpError(`No root for ${real}`);
   return r;
 }
@@ -64,8 +73,9 @@ export function writeFile(roots: Root[], path: string, content: string): void {
 
 function backup(roots: Root[], real: string): void {
   const root = rootForPath(roots, real);
-  const rel = relative(root.path, real);
-  const dest = join(root.path, BACKUP_DIR, `${rel}.${timestamp()}`);
+  const resolvedRoot = resolveInRoot(roots, root.path);
+  const rel = relative(resolvedRoot, real);
+  const dest = join(resolvedRoot, BACKUP_DIR, `${rel}.${timestamp()}`);
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(real, dest);
 }
@@ -148,12 +158,13 @@ export function deleteToTrash(roots: Root[], path: string): void {
   const real = resolveInRoot(roots, path);
   if (!existsSync(real)) throw new FileOpError(`Not found: ${path}`);
   const root = rootForPath(roots, real);
-  const rel = relative(root.path, real);
+  const resolvedRoot = resolveInRoot(roots, root.path);
+  const rel = relative(resolvedRoot, real);
   if (rel.split(sep)[0] === TRASH_DIR) {
     rmSync(real, { recursive: true, force: true });
     return;
   }
-  const dest = join(root.path, TRASH_DIR, `${rel}.${timestamp()}`);
+  const dest = join(resolvedRoot, TRASH_DIR, `${rel}.${timestamp()}`);
   mkdirSync(dirname(dest), { recursive: true });
   renameSync(real, dest);
 }

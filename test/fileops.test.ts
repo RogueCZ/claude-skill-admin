@@ -67,4 +67,33 @@ describe("fileops", () => {
     expect(existsSync(path)).toBe(false);
     expect(existsSync(join(r.path, ".skill-admin-trash"))).toBe(true);
   });
+
+  it("createItem rejects traversal chars in name", () => {
+    const r = root();
+    expect(() => createItem([r], "skill", "t", "../evil")).toThrow(FileOpError);
+  });
+
+  it("addFile rejects traversal in relName", () => {
+    const r = root();
+    const { id } = createItem([r], "skill", "t", "safe-skill");
+    expect(() => addFile([r], id, "../escape", "x")).toThrow(FileOpError);
+  });
+
+  it("backup lands in the most-specific (nested) root, not the parent root", () => {
+    const parentDir = mkdtempSync(join(tmpdir(), "sa-nested-parent-"));
+    const childDir = join(parentDir, "team");
+    mkdirSync(childDir, { recursive: true });
+    const parentRoot = { label: "parent", path: parentDir };
+    const childRoot = { label: "child", path: childDir };
+    // Parent listed first — without the sort fix this would bias toward parent.
+    const roots = [parentRoot, childRoot];
+    const { id } = createItem(roots, "skill", "child", "nested-skill");
+    const { path } = itemPath(roots, id);
+    const skillMd = join(path, "SKILL.md");
+    // Writing over the existing file triggers a backup.
+    writeFile(roots, skillMd, "---\nname: nested-skill\ndescription: test\n---\n\n# nested-skill\n");
+    // Backup must be inside the child (more-specific) root, NOT the parent root.
+    expect(existsSync(join(childDir, ".skill-admin-backups"))).toBe(true);
+    expect(existsSync(join(parentDir, ".skill-admin-backups"))).toBe(false);
+  });
 });
