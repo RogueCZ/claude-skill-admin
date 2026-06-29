@@ -1,6 +1,6 @@
 {
   "name": "skill-admin",
-  "owner": { "name": "skill-admin contributors", "email": "" },
+  "owner": { "name": "RogueCZ", "email": "" },
   "metadata": {
     "description": "Local web UI for managing Claude Code skills and commands",
     "version": "0.1.0"

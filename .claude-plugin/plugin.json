@@ -2,9 +2,9 @@
   "name": "skill-admin",
   "description": "Local web UI to browse, edit, create and delete Claude Code skills & commands",
   "version": "0.1.0",
-  "author": { "name": "skill-admin contributors" },
-  "homepage": "https://github.com/OWNER/skill-admin",
-  "repository": "https://github.com/OWNER/skill-admin",
+  "author": { "name": "RogueCZ" },
+  "homepage": "https://github.com/RogueCZ/claude-skill-admin",
+  "repository": "https://github.com/RogueCZ/claude-skill-admin",
   "license": "MIT",
   "keywords": ["skills", "commands", "admin", "editor", "tooling"]
 }

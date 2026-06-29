@@ -33,20 +33,22 @@ Builds the Vite SPA and the esbuild server bundle into `dist/`, then starts the 
 
 ### (c) Claude Code Plugin
 
-Install from the marketplace (replace `OWNER` with the actual GitHub owner):
+Install from the marketplace:
 
 ```
-/plugin marketplace add OWNER/skill-admin
+/plugin marketplace add RogueCZ/claude-skill-admin
 /plugin install skill-admin@skill-admin
 ```
 
-Then launch from any Claude Code session:
+Then start and stop the server from any Claude Code session:
 
 ```
-/skill-admin
+/skill-admin:start
+/skill-admin:stop
 ```
 
-This runs the pre-built `dist/server.js` bundled with the plugin and prints the URL to open.
+`start` runs the pre-built `dist/server.js` bundled with the plugin (in the
+background) and prints the URL to open; `stop` shuts it down.
 
 ## Configuration File
 
@@ -86,9 +88,8 @@ The global `~/.claude` and the current project's `.claude` directory are always 
 
 ## Maintainer Notes
 
-- The `dist/` directory is **committed** to this repository on purpose — it is the pre-built bundle shipped with the plugin so users can run `/skill-admin` without a build step.
+- The `dist/` directory is **committed** to this repository on purpose — it is the pre-built bundle shipped with the plugin so users can run `/skill-admin:start` without a build step.
 - **Rebuild `dist/` before tagging a release:** run `npm run build` and commit the updated `dist/` so plugin installs pick up the latest code.
-- GitHub URLs in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` contain the placeholder `OWNER`. Replace it with the actual GitHub username or organisation before publishing.
 
 ## License
 
