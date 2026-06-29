@@ -1,0 +1,159 @@
+import {
+  existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync,
+  renameSync, statSync, copyFileSync, rmSync,
+} from "node:fs";
+import { join, relative, dirname, basename, sep } from "node:path";
+import type { Root, ItemType } from "./config.js";
+import { resolveInRoot, decodeId, encodeId } from "./paths.js";
+import { validateFrontmatter } from "./frontmatter.js";
+
+export class FileOpError extends Error {}
+
+export interface FileNode {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+  children?: FileNode[];
+}
+
+const BACKUP_DIR = ".skill-admin-backups";
+const TRASH_DIR = ".skill-admin-trash";
+
+function timestamp(): string {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+function rootForPath(roots: Root[], real: string): Root {
+  for (const r of roots) {
+    const rel = relative(resolveInRoot(roots, r.path), real);
+    if (rel === "" || (!rel.startsWith("..") && rel !== real)) return r;
+  }
+  // Fall back: pick the root whose path is a prefix.
+  const r = roots.find((x) => real.startsWith(resolveInRoot(roots, x.path)));
+  if (!r) throw new FileOpError(`No root for ${real}`);
+  return r;
+}
+
+export function itemPath(
+  roots: Root[],
+  id: string,
+): { root: Root; type: ItemType; path: string } {
+  const { rootLabel, type, name } = decodeId(id);
+  const root = roots.find((r) => r.label === rootLabel);
+  if (!root) throw new FileOpError(`Unknown root: ${rootLabel}`);
+  const path =
+    type === "skill"
+      ? join(root.path, "skills", name)
+      : join(root.path, "commands", `${name}.md`);
+  resolveInRoot(roots, path);
+  return { root, type, path };
+}
+
+export function readFile(roots: Root[], path: string): string {
+  const real = resolveInRoot(roots, path);
+  return readFileSync(real, "utf8");
+}
+
+export function writeFile(roots: Root[], path: string, content: string): void {
+  const real = resolveInRoot(roots, path);
+  validateFrontmatter(content);
+  if (existsSync(real)) backup(roots, real);
+  mkdirSync(dirname(real), { recursive: true });
+  writeFileSync(real, content, "utf8");
+}
+
+function backup(roots: Root[], real: string): void {
+  const root = rootForPath(roots, real);
+  const rel = relative(root.path, real);
+  const dest = join(root.path, BACKUP_DIR, `${rel}.${timestamp()}`);
+  mkdirSync(dirname(dest), { recursive: true });
+  copyFileSync(real, dest);
+}
+
+export function createItem(
+  roots: Root[],
+  type: ItemType,
+  rootLabel: string,
+  name: string,
+): { id: string; path: string } {
+  if (!/^[a-zA-Z0-9._-]+$/.test(name)) {
+    throw new FileOpError(`Invalid name: ${name}`);
+  }
+  const root = roots.find((r) => r.label === rootLabel);
+  if (!root) throw new FileOpError(`Unknown root: ${rootLabel}`);
+
+  if (type === "skill") {
+    const dir = join(root.path, "skills", name);
+    resolveInRoot(roots, dir);
+    if (existsSync(dir)) throw new FileOpError(`Skill exists: ${name}`);
+    mkdirSync(dir, { recursive: true });
+    const tmpl =
+      `---\nname: ${name}\ndescription: TODO describe when to use this skill\n---\n\n` +
+      `# ${name}\n\nDescribe the skill here.\n`;
+    writeFileSync(join(dir, "SKILL.md"), tmpl, "utf8");
+    return { id: encodeId(rootLabel, type, name), path: dir };
+  }
+
+  const dir = join(root.path, "commands");
+  const file = join(dir, `${name}.md`);
+  resolveInRoot(roots, file);
+  if (existsSync(file)) throw new FileOpError(`Command exists: ${name}`);
+  mkdirSync(dir, { recursive: true });
+  const tmpl = `---\ndescription: TODO describe this command\n---\n\n# ${name}\n`;
+  writeFileSync(file, tmpl, "utf8");
+  return { id: encodeId(rootLabel, type, name), path: file };
+}
+
+export function addFile(
+  roots: Root[],
+  id: string,
+  relName: string,
+  content: string,
+): string {
+  if (relName.includes("..")) throw new FileOpError(`Bad file name: ${relName}`);
+  const { type, path: itemDir } = itemPath(roots, id);
+  if (type !== "skill") throw new FileOpError("Can only add files to skills");
+  const dest = join(itemDir, relName);
+  const real = resolveInRoot(roots, dest);
+  if (existsSync(real)) throw new FileOpError(`File exists: ${relName}`);
+  mkdirSync(dirname(real), { recursive: true });
+  writeFileSync(real, content, "utf8");
+  return real;
+}
+
+export function listFiles(roots: Root[], id: string): FileNode[] {
+  const { type, path } = itemPath(roots, id);
+  if (type === "command") {
+    return [{ name: basename(path), path, type: "file" }];
+  }
+  resolveInRoot(roots, path);
+  return walk(path);
+}
+
+function walk(dir: string): FileNode[] {
+  const out: FileNode[] = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) {
+      out.push({ name: e.name, path: p, type: "dir", children: walk(p) });
+    } else {
+      out.push({ name: e.name, path: p, type: "file" });
+    }
+  }
+  out.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === "dir" ? -1 : 1));
+  return out;
+}
+
+export function deleteToTrash(roots: Root[], path: string): void {
+  const real = resolveInRoot(roots, path);
+  if (!existsSync(real)) throw new FileOpError(`Not found: ${path}`);
+  const root = rootForPath(roots, real);
+  const rel = relative(root.path, real);
+  if (rel.split(sep)[0] === TRASH_DIR) {
+    rmSync(real, { recursive: true, force: true });
+    return;
+  }
+  const dest = join(root.path, TRASH_DIR, `${rel}.${timestamp()}`);
+  mkdirSync(dirname(dest), { recursive: true });
+  renameSync(real, dest);
+}
