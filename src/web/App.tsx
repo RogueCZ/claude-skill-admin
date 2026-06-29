@@ -76,6 +76,35 @@ export function App() {
     } catch (e) { setError(String(e)); }
   }
 
+  async function onNewFile() {
+    if (!selected) return;
+    const relName = prompt(
+      "File path within skill folder\n(use / to create subfolders, e.g. reference/notes.md):"
+    );
+    if (!relName?.trim()) return;
+    try {
+      const { path } = await api.addFile(selected.id, relName.trim(), "");
+      const tree = await api.getFiles(selected.id);
+      setFiles(tree);
+      await openFile(path);
+    } catch (e) { setError(String(e)); }
+  }
+
+  async function onDeleteFile(path: string) {
+    if (!selected) return;
+    const name = path.split("/").pop() ?? path;
+    const msg = name === "SKILL.md"
+      ? `Deleting SKILL.md will remove this skill's definition. Continue?`
+      : `Move "${name}" to trash?`;
+    if (!confirm(msg)) return;
+    try {
+      await api.deleteFile(path);
+      const tree = await api.getFiles(selected.id);
+      setFiles(tree);
+      if (filePath === path) { setFilePath(null); setContent(""); setDirty(false); }
+    } catch (e) { setError(String(e)); }
+  }
+
   const language = filePath?.endsWith(".md") ? "markdown" : "plaintext";
 
   return (
@@ -86,7 +115,8 @@ export function App() {
         <Sidebar items={items} query={query} onQuery={setQuery}
           selectedId={selected?.id ?? null} onSelect={openItem} />
         {selected?.type === "skill" && (
-          <FileTree nodes={files} selectedPath={filePath} onSelect={openFile} />
+          <FileTree nodes={files} selectedPath={filePath} onSelect={openFile}
+            onNewFile={onNewFile} onDeleteFile={onDeleteFile} />
         )}
         <div className="editor">
           {filePath

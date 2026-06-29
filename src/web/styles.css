@@ -16,6 +16,12 @@ body, html, #root { margin: 0; height: 100%; font-family: system-ui, sans-serif;
   background: none; padding: 3px 6px; cursor: pointer; font-size: 13px; }
 .item.active, .file.active { background: #def; }
 .filetree { width: 200px; border-right: 1px solid #ddd; overflow: auto; padding: 8px; }
+.filetree-toolbar { padding: 0 0 6px; }
+.filetree-toolbar button { padding: 2px 7px; cursor: pointer; font-size: 12px; }
+.file-row { display: flex; align-items: center; }
+.file-row .file { flex: 1; width: auto; }
+.file-delete { border: 0; background: none; cursor: pointer; color: #bbb; font-size: 11px; padding: 0 4px; line-height: 1; }
+.file-delete:hover { color: #b00; }
 .dir { font-size: 13px; color: #666; }
 .editor { flex: 1; min-width: 0; }
 .empty { padding: 24px; color: #999; }
