@@ -3992,10 +3992,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep4, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep4?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4009,7 +4009,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep4) {
+          if (!keyProps.anchor && !keyProps.tag && !sep3) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4033,7 +4033,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep4 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep3 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4049,7 +4049,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep4, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep3, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4140,7 +4140,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep4 = "";
+        let sep3 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -4154,13 +4154,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep4 + cb;
-              sep4 = "";
+                comment += sep3 + cb;
+              sep3 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep4 += source;
+                sep3 += source;
               hasSpace = true;
               break;
             default:
@@ -4203,18 +4203,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep4, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep4?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep4 && !value) {
+          if (!props.anchor && !props.tag && !sep3 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4268,8 +4268,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep4 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep4, null, props, onError);
+        if (!isMap && !sep3 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep3, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4281,7 +4281,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep4 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep3 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4292,8 +4292,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap && !props.found && ctx.options.strict) {
-              if (sep4)
-                for (const st of sep4) {
+              if (sep3)
+                for (const st of sep3) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4310,7 +4310,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep4, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep3, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4490,7 +4490,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep4 = "";
+      let sep3 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4507,24 +4507,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep4 + indent.slice(trimIndent) + content;
-          sep4 = "\n";
+          value += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep4 === " ")
-            sep4 = "\n";
-          else if (!prevMoreIndented && sep4 === "\n")
-            sep4 = "\n\n";
-          value += sep4 + indent.slice(trimIndent) + content;
-          sep4 = "\n";
+          if (sep3 === " ")
+            sep3 = "\n";
+          else if (!prevMoreIndented && sep3 === "\n")
+            sep3 = "\n\n";
+          value += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep4 === "\n")
+          if (sep3 === "\n")
             value += "\n";
           else
-            sep4 = "\n";
+            sep3 = "\n";
         } else {
-          value += sep4 + content;
-          sep4 = " ";
+          value += sep3 + content;
+          sep3 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4706,25 +4706,25 @@ var require_resolve_flow_scalar = __commonJS({
       if (!match)
         return source;
       let res = match[1];
-      let sep4 = " ";
+      let sep3 = " ";
       let pos = first.lastIndex;
       line.lastIndex = pos;
       while (match = line.exec(source)) {
         if (match[1] === "") {
-          if (sep4 === "\n")
-            res += sep4;
+          if (sep3 === "\n")
+            res += sep3;
           else
-            sep4 = "\n";
+            sep3 = "\n";
         } else {
-          res += sep4 + match[1];
-          sep4 = " ";
+          res += sep3 + match[1];
+          sep3 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep4 + (match?.[1] ?? "");
+      return res + sep3 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -5534,14 +5534,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep4, value }) {
+    function stringifyItem({ start, key, sep: sep3, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep4)
-        for (const st of sep4)
+      if (sep3)
+        for (const st of sep3)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6708,18 +6708,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep4;
+          let sep3;
           if (scalar.end) {
-            sep4 = scalar.end;
-            sep4.push(this.sourceToken);
+            sep3 = scalar.end;
+            sep3.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep4 = [this.sourceToken];
+            sep3 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep4 }]
+            items: [{ start, key: scalar, sep: sep3 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6872,15 +6872,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep4 = it.sep;
-                  sep4.push(this.sourceToken);
+                  const sep3 = it.sep;
+                  sep3.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep4 }]
+                    items: [{ start: start2, key, sep: sep3 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7074,13 +7074,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep4 = fc.end.splice(1, fc.end.length);
-            sep4.push(this.sourceToken);
+            const sep3 = fc.end.splice(1, fc.end.length);
+            sep3.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep4 }]
+              items: [{ start, key: fc, sep: sep3 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -7361,7 +7361,7 @@ var require_dist = __commonJS({
 // src/server/server.ts
 import http from "node:http";
 import { readFileSync as readFileSync4, existsSync as existsSync4, statSync as statSync2 } from "node:fs";
-import { join as join4, extname, normalize, resolve as resolve3, sep as sep3, dirname as dirname3 } from "node:path";
+import { join as join5, extname, normalize, resolve as resolve3, sep as sep2, dirname as dirname3 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // src/server/roots.ts
@@ -7410,8 +7410,8 @@ function findConfigFile(opts) {
 }
 
 // src/server/scan.ts
-import { existsSync as existsSync2, readdirSync, readFileSync as readFileSync2 } from "node:fs";
-import { join as join2, basename } from "node:path";
+import { existsSync as existsSync2, readdirSync as readdirSync2, readFileSync as readFileSync2 } from "node:fs";
+import { join as join3, basename as basename2 } from "node:path";
 
 // src/server/frontmatter.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -7427,7 +7427,7 @@ function splitFrontmatter(text) {
   } catch (e) {
     throw new FrontmatterError(`Invalid YAML frontmatter: ${e.message}`);
   }
-  if (data === null || typeof data !== "object") {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) {
     throw new FrontmatterError("Frontmatter must be a YAML mapping");
   }
   return { data, body: text.slice(m[0].length) };
@@ -7445,8 +7445,8 @@ function validateFrontmatter(text) {
 }
 
 // src/server/paths.ts
-import { realpathSync } from "node:fs";
-import { resolve as resolve2, relative, isAbsolute, sep, dirname } from "node:path";
+import { realpathSync, readdirSync } from "node:fs";
+import { resolve as resolve2, relative, isAbsolute, dirname, basename, join as join2 } from "node:path";
 var PathError = class extends Error {
 };
 function realpathSafe(p) {
@@ -7455,18 +7455,37 @@ function realpathSafe(p) {
   } catch {
     const parent = dirname(p);
     if (parent === p) return p;
-    return resolve2(realpathSafe(parent), p.slice(parent.length + 1));
+    return resolve2(realpathSafe(parent), basename(p));
   }
 }
 function within(rootReal, targetReal) {
   const rel = relative(rootReal, targetReal);
   return rel === "" || !rel.startsWith("..") && !isAbsolute(rel);
 }
+function symlinkSkillRoots(roots) {
+  const result = [];
+  for (const r of roots) {
+    const skillsDir = join2(resolve2(r.path), "skills");
+    try {
+      for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
+        if (entry.isSymbolicLink()) {
+          const target = realpathSafe(join2(skillsDir, entry.name));
+          result.push({ base: target, root: r });
+        }
+      }
+    } catch {
+    }
+  }
+  return result;
+}
 function resolveInRoot(roots, targetPath) {
   const targetReal = realpathSafe(resolve2(targetPath));
   for (const r of roots) {
     const rootReal = realpathSafe(resolve2(r.path));
     if (within(rootReal, targetReal)) return targetReal;
+  }
+  for (const { base } of symlinkSkillRoots(roots)) {
+    if (within(base, targetReal)) return targetReal;
   }
   throw new PathError(`Path outside managed roots: ${targetPath}`);
 }
@@ -7501,12 +7520,12 @@ function safeRead(p) {
 }
 function scanRoot(root) {
   const items = [];
-  const skillsDir = join2(root.path, "skills");
+  const skillsDir = join3(root.path, "skills");
   if (existsSync2(skillsDir)) {
-    for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
+    for (const entry of readdirSync2(skillsDir, { withFileTypes: true })) {
       if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
-      const dirPath = join2(skillsDir, entry.name);
-      const skillMd = join2(dirPath, "SKILL.md");
+      const dirPath = join3(skillsDir, entry.name);
+      const skillMd = join3(dirPath, "SKILL.md");
       if (!existsSync2(skillMd)) continue;
       const meta = parseFrontmatter(safeRead(skillMd));
       items.push({
@@ -7520,12 +7539,12 @@ function scanRoot(root) {
       });
     }
   }
-  const cmdsDir = join2(root.path, "commands");
+  const cmdsDir = join3(root.path, "commands");
   if (existsSync2(cmdsDir)) {
-    for (const entry of readdirSync(cmdsDir, { withFileTypes: true })) {
+    for (const entry of readdirSync2(cmdsDir, { withFileTypes: true })) {
       if (!entry.name.endsWith(".md")) continue;
-      const filePath = join2(cmdsDir, entry.name);
-      const name = basename(entry.name, ".md");
+      const filePath = join3(cmdsDir, entry.name);
+      const name = basename2(entry.name, ".md");
       const meta = parseFrontmatter(safeRead(filePath));
       items.push({
         id: encodeId(root.label, "command", name),
@@ -7549,14 +7568,14 @@ function scanAll(roots) {
 import {
   existsSync as existsSync3,
   mkdirSync,
-  readdirSync as readdirSync2,
+  readdirSync as readdirSync3,
   readFileSync as readFileSync3,
   writeFileSync,
   renameSync,
   copyFileSync,
   rmSync
 } from "node:fs";
-import { join as join3, relative as relative2, dirname as dirname2, basename as basename2, sep as sep2 } from "node:path";
+import { join as join4, relative as relative2, dirname as dirname2, basename as basename3, sep } from "node:path";
 var FileOpError = class extends Error {
 };
 var BACKUP_DIR = ".skill-admin-backups";
@@ -7575,16 +7594,19 @@ function rootForPath(roots, real) {
   }
   const r = sorted.find((x) => {
     const resolvedRoot = resolveInRoot(roots, x.path);
-    return real === resolvedRoot || real.startsWith(resolvedRoot + sep2);
+    return real === resolvedRoot || real.startsWith(resolvedRoot + sep);
   });
-  if (!r) throw new FileOpError(`No root for ${real}`);
-  return r;
+  if (r) return r;
+  for (const { base, root } of symlinkSkillRoots(roots)) {
+    if (real === base || real.startsWith(base + sep)) return root;
+  }
+  throw new FileOpError(`No root for ${real}`);
 }
 function itemPath(roots, id) {
   const { rootLabel, type, name } = decodeId(id);
   const root = roots.find((r) => r.label === rootLabel);
   if (!root) throw new FileOpError(`Unknown root: ${rootLabel}`);
-  const path = type === "skill" ? join3(root.path, "skills", name) : join3(root.path, "commands", `${name}.md`);
+  const path = type === "skill" ? join4(root.path, "skills", name) : join4(root.path, "commands", `${name}.md`);
   resolveInRoot(roots, path);
   return { root, type, path };
 }
@@ -7603,7 +7625,8 @@ function backup(roots, real) {
   const root = rootForPath(roots, real);
   const resolvedRoot = resolveInRoot(roots, root.path);
   const rel = relative2(resolvedRoot, real);
-  const dest = join3(resolvedRoot, BACKUP_DIR, `${rel}.${timestamp()}`);
+  const safePath = rel.startsWith("..") ? join4(basename3(dirname2(real)), basename3(real)) : rel;
+  const dest = join4(resolvedRoot, BACKUP_DIR, `${safePath}.${timestamp()}`);
   mkdirSync(dirname2(dest), { recursive: true });
   copyFileSync(real, dest);
 }
@@ -7614,7 +7637,7 @@ function createItem(roots, type, rootLabel, name) {
   const root = roots.find((r) => r.label === rootLabel);
   if (!root) throw new FileOpError(`Unknown root: ${rootLabel}`);
   if (type === "skill") {
-    const dir2 = join3(root.path, "skills", name);
+    const dir2 = join4(root.path, "skills", name);
     resolveInRoot(roots, dir2);
     if (existsSync3(dir2)) throw new FileOpError(`Skill exists: ${name}`);
     mkdirSync(dir2, { recursive: true });
@@ -7627,11 +7650,11 @@ description: TODO describe when to use this skill
 
 Describe the skill here.
 `;
-    writeFileSync(join3(dir2, "SKILL.md"), tmpl2, "utf8");
+    writeFileSync(join4(dir2, "SKILL.md"), tmpl2, "utf8");
     return { id: encodeId(rootLabel, type, name), path: dir2 };
   }
-  const dir = join3(root.path, "commands");
-  const file = join3(dir, `${name}.md`);
+  const dir = join4(root.path, "commands");
+  const file = join4(dir, `${name}.md`);
   resolveInRoot(roots, file);
   if (existsSync3(file)) throw new FileOpError(`Command exists: ${name}`);
   mkdirSync(dir, { recursive: true });
@@ -7648,7 +7671,7 @@ function addFile(roots, id, relName, content) {
   if (relName.includes("..")) throw new FileOpError(`Bad file name: ${relName}`);
   const { type, path: itemDir } = itemPath(roots, id);
   if (type !== "skill") throw new FileOpError("Can only add files to skills");
-  const dest = join3(itemDir, relName);
+  const dest = join4(itemDir, relName);
   const real = resolveInRoot(roots, dest);
   if (existsSync3(real)) throw new FileOpError(`File exists: ${relName}`);
   mkdirSync(dirname2(real), { recursive: true });
@@ -7658,15 +7681,15 @@ function addFile(roots, id, relName, content) {
 function listFiles(roots, id) {
   const { type, path } = itemPath(roots, id);
   if (type === "command") {
-    return [{ name: basename2(path), path, type: "file" }];
+    return [{ name: basename3(path), path, type: "file" }];
   }
   resolveInRoot(roots, path);
   return walk(path);
 }
 function walk(dir) {
   const out = [];
-  for (const e of readdirSync2(dir, { withFileTypes: true })) {
-    const p = join3(dir, e.name);
+  for (const e of readdirSync3(dir, { withFileTypes: true })) {
+    const p = join4(dir, e.name);
     if (e.isDirectory()) {
       out.push({ name: e.name, path: p, type: "dir", children: walk(p) });
     } else {
@@ -7682,11 +7705,11 @@ function deleteToTrash(roots, path) {
   const root = rootForPath(roots, real);
   const resolvedRoot = resolveInRoot(roots, root.path);
   const rel = relative2(resolvedRoot, real);
-  if (rel.split(sep2)[0] === TRASH_DIR) {
+  if (rel.split(sep)[0] === TRASH_DIR) {
     rmSync(real, { recursive: true, force: true });
     return;
   }
-  const dest = join3(resolvedRoot, TRASH_DIR, `${rel}.${timestamp()}`);
+  const dest = join4(resolvedRoot, TRASH_DIR, `${rel}.${timestamp()}`);
   mkdirSync(dirname2(dest), { recursive: true });
   renameSync(real, dest);
 }
@@ -7745,6 +7768,9 @@ function handleApi(roots, method, url, body) {
     if (e instanceof PathError || e instanceof FrontmatterError || e instanceof FileOpError || e instanceof SyntaxError) {
       return err(400, e.message);
     }
+    if (e.code === "ENOENT") {
+      return err(404, e.message);
+    }
     return err(500, e.message);
   }
 }
@@ -7762,6 +7788,12 @@ var MIME = {
 };
 function createServer(roots, publicDir) {
   return http.createServer((req, res) => {
+    const rawHost = req.headers.host ?? "";
+    const hostName = rawHost.includes(":") ? rawHost.split(":")[0] : rawHost;
+    if (hostName !== "" && hostName !== "127.0.0.1" && hostName !== "localhost") {
+      res.writeHead(403).end("Forbidden");
+      return;
+    }
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     if (url.pathname.startsWith("/api/")) {
       let body = "";
@@ -7788,13 +7820,13 @@ function createServer(roots, publicDir) {
 function serveStatic(publicDir, pathname, res) {
   const base = resolve3(publicDir);
   const rel = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  let file = resolve3(join4(publicDir, rel === "/" ? "index.html" : rel));
-  if (file !== base && file !== join4(base, "index.html") && !file.startsWith(base + sep3)) {
+  let file = resolve3(join5(publicDir, rel === "/" ? "index.html" : rel));
+  if (file !== base && file !== join5(base, "index.html") && !file.startsWith(base + sep2)) {
     res.writeHead(403).end("Forbidden");
     return;
   }
   if (!existsSync4(file) || statSync2(file).isDirectory()) {
-    file = join4(base, "index.html");
+    file = join5(base, "index.html");
   }
   if (!existsSync4(file)) {
     res.writeHead(404).end("Not found");
@@ -7806,7 +7838,7 @@ function serveStatic(publicDir, pathname, res) {
 function main() {
   const cfg = loadConfig({ cwd: process.cwd(), home: process.env.HOME ?? "", env: process.env });
   const here = dirname3(fileURLToPath(import.meta.url));
-  const publicDir = join4(here, "public");
+  const publicDir = join5(here, "public");
   const server = createServer(cfg.roots, existsSync4(publicDir) ? publicDir : void 0);
   server.listen(cfg.port, "127.0.0.1", () => {
     console.log(`skill-admin running at http://127.0.0.1:${cfg.port}`);

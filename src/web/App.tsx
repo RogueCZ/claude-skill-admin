@@ -99,9 +99,9 @@ export function App() {
     if (!confirm(msg)) return;
     try {
       await api.deleteFile(path);
+      if (filePath === path) { setFilePath(null); setContent(""); setDirty(false); }
       const tree = await api.getFiles(selected.id);
       setFiles(tree);
-      if (filePath === path) { setFilePath(null); setContent(""); setDirty(false); }
     } catch (e) { setError(String(e)); }
   }
 
