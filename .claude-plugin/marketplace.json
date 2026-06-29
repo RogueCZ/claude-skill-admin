@@ -1,0 +1,18 @@
+{
+  "name": "skill-admin",
+  "owner": { "name": "skill-admin contributors", "email": "" },
+  "metadata": {
+    "description": "Local web UI for managing Claude Code skills and commands",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "skill-admin",
+      "source": "./",
+      "description": "Browse, edit, create and delete skills & commands across your .claude directories from a local web UI.",
+      "category": "tooling",
+      "tags": ["skills", "commands", "editor", "admin"]
+    }
+  ],
+  "version": "0.1.0"
+}
