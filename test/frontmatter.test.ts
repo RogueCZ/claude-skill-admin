@@ -23,4 +23,9 @@ describe("frontmatter", () => {
   it("no-op when no block", () => {
     expect(() => validateFrontmatter("# md only")).not.toThrow();
   });
+
+  // FIX 2 — YAML arrays must be rejected (typeof [] === "object" was passing before)
+  it("throws FrontmatterError when frontmatter is a YAML array", () => {
+    expect(() => splitFrontmatter("---\n- a\n- b\n---\n")).toThrow(FrontmatterError);
+  });
 });

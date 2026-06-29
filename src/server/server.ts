@@ -14,6 +14,16 @@ const MIME: Record<string, string> = {
 
 export function createServer(roots: Root[], publicDir?: string): http.Server {
   return http.createServer((req, res) => {
+    // FIX 5 — Host-header guard (DNS-rebinding hardening).
+    // Accept only 127.0.0.1 and localhost; reject anything else (e.g. evil.com).
+    // Missing host (empty) is allowed — it can't be a DNS-rebinding vector.
+    const rawHost = req.headers.host ?? "";
+    const hostName = rawHost.includes(":") ? rawHost.split(":")[0] : rawHost;
+    if (hostName !== "" && hostName !== "127.0.0.1" && hostName !== "localhost") {
+      res.writeHead(403).end("Forbidden");
+      return;
+    }
+
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     if (url.pathname.startsWith("/api/")) {
       let body = "";

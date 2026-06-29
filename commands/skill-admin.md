@@ -11,7 +11,7 @@ report the local URL. The server binds to 127.0.0.1 only.
 Run this exact command:
 
 ```bash
-PORT="${PORT:-7842}"; node "${CLAUDE_PLUGIN_ROOT}/dist/server.js" >/tmp/skill-admin.log 2>&1 &
+PORT="${PORT:-7842}" node "${CLAUDE_PLUGIN_ROOT}/dist/server.js" >/tmp/skill-admin.log 2>&1 &
 sleep 1; echo "skill-admin starting — open http://127.0.0.1:${PORT}"; cat /tmp/skill-admin.log
 ```
 

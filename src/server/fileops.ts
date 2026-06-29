@@ -4,7 +4,7 @@ import {
 } from "node:fs";
 import { join, relative, dirname, basename, sep } from "node:path";
 import type { Root, ItemType } from "./config.js";
-import { resolveInRoot, decodeId, encodeId } from "./paths.js";
+import { resolveInRoot, decodeId, encodeId, symlinkSkillRoots } from "./paths.js";
 import { validateFrontmatter } from "./frontmatter.js";
 
 export class FileOpError extends Error {}
@@ -39,8 +39,14 @@ function rootForPath(roots: Root[], real: string): Root {
     const resolvedRoot = resolveInRoot(roots, x.path);
     return real === resolvedRoot || real.startsWith(resolvedRoot + sep);
   });
-  if (!r) throw new FileOpError(`No root for ${real}`);
-  return r;
+  if (r) return r;
+
+  // Final fallback: real path is inside a symlinked skill target outside all roots.
+  for (const { base, root } of symlinkSkillRoots(roots)) {
+    if (real === base || real.startsWith(base + sep)) return root;
+  }
+
+  throw new FileOpError(`No root for ${real}`);
 }
 
 export function itemPath(
@@ -75,7 +81,11 @@ function backup(roots: Root[], real: string): void {
   const root = rootForPath(roots, real);
   const resolvedRoot = resolveInRoot(roots, root.path);
   const rel = relative(resolvedRoot, real);
-  const dest = join(resolvedRoot, BACKUP_DIR, `${rel}.${timestamp()}`);
+  // If the real path is a symlinked-skill target outside the root, rel will
+  // start with "..". Use a safe two-component name to keep the backup inside
+  // the owning root's backup dir.
+  const safePath = rel.startsWith("..") ? join(basename(dirname(real)), basename(real)) : rel;
+  const dest = join(resolvedRoot, BACKUP_DIR, `${safePath}.${timestamp()}`);
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(real, dest);
 }

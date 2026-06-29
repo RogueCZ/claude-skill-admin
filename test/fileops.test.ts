@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -77,6 +77,32 @@ describe("fileops", () => {
     const r = root();
     const { id } = createItem([r], "skill", "t", "safe-skill");
     expect(() => addFile([r], id, "../escape", "x")).toThrow(FileOpError);
+  });
+
+  it("reads and writes through a symlinked skill whose target is outside the root", () => {
+    const rootDir = mkdtempSync(join(tmpdir(), "sa-ops-sym-root-"));
+    const outside = mkdtempSync(join(tmpdir(), "sa-ops-sym-out-"));
+    writeFileSync(
+      join(outside, "SKILL.md"),
+      "---\nname: linked\ndescription: original\n---\n\n# linked\n",
+    );
+    mkdirSync(join(rootDir, "skills"), { recursive: true });
+    symlinkSync(outside, join(rootDir, "skills", "linked"));
+
+    const r = { label: "t", path: rootDir };
+    const skillMd = join(rootDir, "skills", "linked", "SKILL.md");
+
+    // readFile must succeed and return original content
+    const content = readFile([r], skillMd);
+    expect(content).toContain("name: linked");
+
+    // writeFile must succeed, landing new content in the real outside file
+    const newContent = "---\nname: linked\ndescription: updated\n---\n\n# linked\n";
+    writeFile([r], skillMd, newContent);
+    expect(readFileSync(join(outside, "SKILL.md"), "utf8")).toBe(newContent);
+
+    // Backup must be created under the owning root's .skill-admin-backups
+    expect(existsSync(join(rootDir, ".skill-admin-backups"))).toBe(true);
   });
 
   it("backup lands in the most-specific (nested) root, not the parent root", () => {

@@ -81,7 +81,7 @@ The global `~/.claude` and the current project's `.claude` directory are always 
 
 - **Backups:** Before any file is overwritten, the original is copied to `.skill-admin-backups/` in the same `.claude` root.
 - **Trash:** Deleted files are moved to `.skill-admin-trash/` (not permanently deleted). You can recover them manually.
-- **Localhost-only:** The server binds to `127.0.0.1`; it is never reachable from the network.
+- **Localhost-only:** The server binds to `127.0.0.1`; it is never reachable from the network. Every incoming request's `Host` header is validated — only `127.0.0.1` and `localhost` are accepted — which blocks DNS-rebinding attacks from malicious web pages trying to drive the local server.
 - **Plugin cache excluded:** The Claude Code plugin cache directory is automatically excluded from scans so you don't accidentally edit installed plugin files.
 
 ## Maintainer Notes

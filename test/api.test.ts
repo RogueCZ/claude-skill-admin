@@ -46,4 +46,14 @@ describe("handleApi", () => {
     const res = handleApi(roots(), "POST", U("/api/items"), "{not json");
     expect(res.status).toBe(400);
   });
+
+  // FIX 4 — ENOENT should produce 404, not 500
+  it("GET /api/file for a path inside a root but nonexistent returns 404", () => {
+    const r = roots();
+    const missingPath = join(r[0].path, "nonexistent-file.md");
+    const url = new URL("http://127.0.0.1/api/file");
+    url.searchParams.set("path", missingPath);
+    const res = handleApi(r, "GET", url, "");
+    expect(res.status).toBe(404);
+  });
 });

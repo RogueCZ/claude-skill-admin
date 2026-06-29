@@ -16,7 +16,7 @@ export function splitFrontmatter(text: string): {
   } catch (e) {
     throw new FrontmatterError(`Invalid YAML frontmatter: ${(e as Error).message}`);
   }
-  if (data === null || typeof data !== "object") {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) {
     throw new FrontmatterError("Frontmatter must be a YAML mapping");
   }
   return { data: data as Record<string, unknown>, body: text.slice(m[0].length) };

@@ -1,5 +1,5 @@
-import { realpathSync } from "node:fs";
-import { resolve, relative, isAbsolute, sep, dirname } from "node:path";
+import { realpathSync, readdirSync } from "node:fs";
+import { resolve, relative, isAbsolute, dirname, basename, join } from "node:path";
 import type { Root, ItemType } from "./config.js";
 
 export class PathError extends Error {}
@@ -12,7 +12,9 @@ function realpathSafe(p: string): string {
   } catch {
     const parent = dirname(p);
     if (parent === p) return p;
-    return resolve(realpathSafe(parent), p.slice(parent.length + 1));
+    // FIX 3: use basename(p) instead of p.slice(parent.length + 1) to avoid
+    // off-by-one when parent is "/" (length 1, +1 drops first char of name).
+    return resolve(realpathSafe(parent), basename(p));
   }
 }
 
@@ -21,12 +23,44 @@ function within(rootReal: string, targetReal: string): boolean {
   return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
 }
 
+/**
+ * FIX 1 — for each root, find top-level skills/ entries that are symlinks
+ * and return their resolved real target paths alongside the owning root.
+ * Used both in resolveInRoot (guard) and fileops rootForPath (backup).
+ */
+export function symlinkSkillRoots(roots: Root[]): Array<{ base: string; root: Root }> {
+  const result: Array<{ base: string; root: Root }> = [];
+  for (const r of roots) {
+    const skillsDir = join(resolve(r.path), "skills");
+    try {
+      for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
+        if (entry.isSymbolicLink()) {
+          const target = realpathSafe(join(skillsDir, entry.name));
+          result.push({ base: target, root: r });
+        }
+      }
+    } catch {
+      // skillsDir doesn't exist or isn't readable — skip silently
+    }
+  }
+  return result;
+}
+
 export function resolveInRoot(roots: Root[], targetPath: string): string {
   const targetReal = realpathSafe(resolve(targetPath));
+
+  // (a) Check configured root dirs
   for (const r of roots) {
     const rootReal = realpathSafe(resolve(r.path));
     if (within(rootReal, targetReal)) return targetReal;
   }
+
+  // (b) Check symlinked-skill target dirs (only top-level skills/ symlinks,
+  //     not arbitrary nested or commands/ symlinks — surgical allowlist).
+  for (const { base } of symlinkSkillRoots(roots)) {
+    if (within(base, targetReal)) return targetReal;
+  }
+
   throw new PathError(`Path outside managed roots: ${targetPath}`);
 }
 
@@ -50,11 +84,4 @@ export function decodeId(id: string): { rootLabel: string; type: ItemType; name:
   if (type !== "skill" && type !== "command") throw new PathError(`Bad id type: ${id}`);
   if (!rootLabel || !name) throw new PathError(`Malformed id: ${id}`);
   return { rootLabel, type, name };
-}
-
-const EXCLUDED = ["plugins/cache/", ".skill-admin-backups/", ".skill-admin-trash/"];
-
-export function isExcludedPath(rel: string): boolean {
-  const norm = rel.split(sep).join("/");
-  return EXCLUDED.some((p) => norm === p.slice(0, -1) || norm.startsWith(p));
 }
