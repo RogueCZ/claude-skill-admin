@@ -66,7 +66,7 @@ export function handleApi(roots: Root[], method: string, url: URL, body: string)
     }
     return err(404, "not found");
   } catch (e) {
-    if (e instanceof PathError || e instanceof FrontmatterError || e instanceof FileOpError) {
+    if (e instanceof PathError || e instanceof FrontmatterError || e instanceof FileOpError || e instanceof SyntaxError) {
       return err(400, e.message);
     }
     return err(500, (e as Error).message);

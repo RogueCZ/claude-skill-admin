@@ -1,8 +1,7 @@
 import http from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { join, extname, normalize } from "node:path";
+import { join, extname, normalize, resolve, sep, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import type { Root } from "./config.js";
 import { loadConfig } from "./roots.js";
 import { handleApi } from "./api.js";
@@ -40,10 +39,16 @@ export function createServer(roots: Root[], publicDir?: string): http.Server {
 }
 
 function serveStatic(publicDir: string, pathname: string, res: http.ServerResponse): void {
+  const base = resolve(publicDir);
   const rel = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  let file = join(publicDir, rel === "/" ? "index.html" : rel);
+  let file = resolve(join(publicDir, rel === "/" ? "index.html" : rel));
+  // Explicit containment check — safety must not depend solely on normalize+join behavior
+  if (file !== base && file !== join(base, "index.html") && !file.startsWith(base + sep)) {
+    res.writeHead(403).end("Forbidden");
+    return;
+  }
   if (!existsSync(file) || statSync(file).isDirectory()) {
-    file = join(publicDir, "index.html"); // SPA fallback
+    file = join(base, "index.html"); // SPA fallback
   }
   if (!existsSync(file)) {
     res.writeHead(404).end("Not found");

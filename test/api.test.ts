@@ -41,4 +41,9 @@ describe("handleApi", () => {
   it("404 for unknown route", () => {
     expect(handleApi(roots(), "GET", U("/api/nope"), "").status).toBe(404);
   });
+
+  it("malformed JSON body returns 400", () => {
+    const res = handleApi(roots(), "POST", U("/api/items"), "{not json");
+    expect(res.status).toBe(400);
+  });
 });
